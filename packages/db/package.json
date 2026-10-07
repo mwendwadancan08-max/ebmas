@@ -10,7 +10,8 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\"",
-    "contract:emit": "prisma contract emit"
+    "contract:emit": "prisma contract emit",
+    "postinstall": "prisma generate"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",
