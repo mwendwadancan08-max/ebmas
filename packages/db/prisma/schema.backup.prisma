@@ -1,0 +1,246 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  SCHOOL_COORDINATOR
+  DEPARTMENT_COORDINATOR
+  INVIGILATOR
+  STUDENT
+}
+
+enum UnitStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  SUBMITTED
+  TRANSFERRED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  role      UserRole
+  schoolId  String?
+
+  school School? @relation(fields: [schoolId], references: [id])
+
+  sittingInvigilator SittingInvigilator[]
+  auditLogs           AuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([schoolId])
+}
+
+model School {
+  id   String @id @default(cuid())
+  name String @unique
+  code String @unique
+
+  users       User[]
+  courses     Course[]
+  students    Student[]
+  departments Department[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Course {
+  id       String @id @default(cuid())
+  schoolId String
+  name     String
+  code     String
+
+  school School @relation(fields: [schoolId], references: [id])
+
+  students    Student[]
+  courseUnits CourseUnit[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([schoolId, code])
+  @@index([schoolId])
+}
+
+model Student {
+  id        String @id @default(cuid())
+  schoolId  String
+  courseId  String
+  regNumber String
+  firstName String
+  lastName  String
+
+  school School @relation(fields: [schoolId], references: [id])
+  course Course @relation(fields: [courseId], references: [id])
+
+  bookletEntries BookletEntry[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([schoolId, regNumber])
+  @@index([courseId])
+}
+
+model Department {
+  id       String @id @default(cuid())
+  schoolId String
+  name     String
+  code     String
+
+  school School @relation(fields: [schoolId], references: [id])
+  units  Unit[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([schoolId, code])
+  @@index([schoolId])
+}
+
+model Unit {
+  id           String     @id @default(cuid())
+  departmentId String
+  code         String
+  name         String
+  status       UnitStatus @default(NOT_STARTED)
+
+  department  Department   @relation(fields: [departmentId], references: [id])
+  courseUnits CourseUnit[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([departmentId, code])
+  @@index([departmentId])
+}
+
+model CourseUnit {
+  id       String @id @default(cuid())
+  unitId   String
+  courseId String
+
+  unit   Unit   @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  examSittings ExamSitting[]
+
+  @@unique([unitId, courseId])
+  @@index([courseId])
+}
+
+model ExamPeriod {
+  id        String   @id @default(cuid())
+  name      String
+  startDate DateTime
+  endDate   DateTime
+
+  sittings ExamSitting[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ExamSitting {
+  id           String   @id @default(cuid())
+  examPeriodId String
+  courseUnitId String
+  startTime    DateTime
+  endTime      DateTime
+
+  examPeriod ExamPeriod @relation(fields: [examPeriodId], references: [id])
+  courseUnit CourseUnit @relation(fields: [courseUnitId], references: [id])
+
+  invigilators   SittingInvigilator[]
+  bookletEntries BookletEntry[]
+  syncBatches    SyncBatch[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([examPeriodId, courseUnitId])
+  @@index([examPeriodId])
+  @@index([courseUnitId])
+}
+
+model SittingInvigilator {
+  id        String @id @default(cuid())
+  sittingId String
+  userId    String
+
+  sitting ExamSitting @relation(fields: [sittingId], references: [id], onDelete: Cascade)
+  user    User        @relation(fields: [userId], references: [id])
+
+  assignedAt DateTime @default(now())
+
+  @@unique([sittingId, userId])
+  @@index([userId])
+}
+
+model BookletEntry {
+  id          String   @id @default(cuid())
+  sittingId   String
+  studentId   String
+  bookletCode String
+  present     Boolean  @default(true)
+  recordedAt  DateTime @default(now())
+
+  sitting ExamSitting @relation(fields: [sittingId], references: [id], onDelete: Cascade)
+  student Student     @relation(fields: [studentId], references: [id])
+
+  @@unique([sittingId, studentId])
+  @@unique([sittingId, bookletCode])
+  @@index([studentId])
+}
+
+model Device {
+  id         String   @id @default(cuid())
+  deviceKey  String   @unique
+  name       String
+  tokenHash  String
+  active     Boolean  @default(true)
+  lastSeenAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SyncBatch {
+  id        String   @id @default(cuid())
+  sittingId String
+  deviceKey String
+  batchHash String
+  syncedAt  DateTime @default(now())
+
+  sitting ExamSitting @relation(fields: [sittingId], references: [id], onDelete: Cascade)
+
+  @@unique([sittingId, batchHash])
+  @@index([deviceKey])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
