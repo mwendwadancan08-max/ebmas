@@ -12,6 +12,8 @@ import {
   RNA_STORES,
 } from "./rna-db";
 
+export { getSittingBookletEntries };
+
 const DEVICE_ID = "local-device";
 
 function now(): string {

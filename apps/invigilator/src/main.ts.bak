@@ -1444,6 +1444,49 @@ function sittingPage() {
   `;
 }
 
+function render() {
+  const app =
+    document.querySelector<HTMLDivElement>("#app");
+
+  if (!app) {
+    return;
+  }
+
+  let content = "";
+
+  switch (state.page) {
+    case "dashboard":
+      content = dashboardPage();
+      break;
+
+    case "examinations":
+      content = examinationsPage();
+      break;
+
+    case "students":
+      content = studentsPage();
+      break;
+
+    case "transfers":
+      content = transfersPage();
+      break;
+
+    case "archive":
+      content = archivePage();
+      break;
+
+    case "sitting":
+      content = sittingPage();
+      break;
+  }
+
+  app.innerHTML =
+    state.page === "sitting"
+      ? `<div class="app-shell">${content}</div>`
+      : shell(content);
+
+  attachHandlers();
+}
 
 function attachHandlers() {
 
@@ -1780,7 +1823,7 @@ async function loadReceptionCode() {
 
   try {
 
-    const transfer =
+    const batch =
       await getTransferBatch(
         sitting.id,
       );
@@ -1792,7 +1835,7 @@ async function loadReceptionCode() {
 
     if (code) {
       code.textContent =
-        transfer?.batch.receptionCode ??
+        batch?.receptionCode ??
         "NOT GENERATED";
     }
 
@@ -2088,6 +2131,8 @@ function finalRender() {
 
   attachHandlers();
 }
+
+const originalRender = render;
 
 function render() {
   finalRender();

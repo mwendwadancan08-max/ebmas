@@ -39,10 +39,18 @@ type Props = {
     studentId: string,
     present: boolean
   ) => void;
+  onSaveAttendance?: (
+    studentId: string,
+    present: boolean
+  ) => void;
 };
 
 export function renderExamSittingPage({
   sitting,
+  onBack,
+  onStart,
+  onEnd,
+  onSaveBooklet,
 }: Props): string {
   const statusLabel =
     sitting.status === "DOWNLOADED"
@@ -304,6 +312,19 @@ export function bindExamSittingEvents({
     .getElementById("end-exam")
     ?.addEventListener("click", () => onEnd?.());
 
+  document.querySelectorAll<HTMLInputElement>(".student-present")
+    .forEach((input) => {
+      input.addEventListener("change", () => {
+        const studentId = input.dataset.studentId;
+
+        if (!studentId) return;
+
+        onSaveAttendance?.(
+          studentId,
+          input.checked
+        );
+      });
+    });
   document.querySelectorAll<HTMLInputElement>(".student-present")
     .forEach((input) => {
       input.addEventListener("change", () => {

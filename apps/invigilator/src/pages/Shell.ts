@@ -7,12 +7,19 @@ type Props = {
   children: string;
 };
 
+const navigation = [
+  ["dashboard", "Dashboard"],
+  ["examinations", "Examinations"],
+  ["students", "Students"],
+  ["transfers", "Transfers"],
+  ["archive", "Archive"],
+] as const;
+
 export function renderShell({
   activePage,
   deviceName,
   deviceKey,
   registered,
-  onNavigate,
   children,
 }: Props): string {
   return `
@@ -32,58 +39,47 @@ export function renderShell({
         <div class="sidebar-divider"></div>
 
         <nav class="main-nav">
-
-          <button
-            class="nav-item ${activePage === "dashboard" ? "active" : ""}"
-            data-nav="dashboard"
-          >
-            Dashboard
-          </button>
-
-          <button
-            class="nav-item ${activePage === "examinations" ? "active" : ""}"
-            data-nav="examinations"
-          >
-            Examinations
-          </button>
-
-          <button
-            class="nav-item ${activePage === "students" ? "active" : ""}"
-            data-nav="students"
-          >
-            Students
-          </button>
-
-          <button
-            class="nav-item ${activePage === "transfers" ? "active" : ""}"
-            data-nav="transfers"
-          >
-            Transfers
-          </button>
-
-          <button
-            class="nav-item ${activePage === "archive" ? "active" : ""}"
-            data-nav="archive"
-          >
-            Archive
-          </button>
-
+          ${navigation
+            .map(
+              ([page, label]) => `
+                <button
+                  type="button"
+                  class="nav-item ${
+                    activePage === page
+                      ? "active"
+                      : ""
+                  }"
+                  data-nav="${page}"
+                >
+                  ${label}
+                </button>
+              `
+            )
+            .join("")}
         </nav>
 
         <div class="sidebar-bottom">
 
           <div class="device-status">
-            <span class="device-status-label">DEVICE</span>
+
+            <span class="device-status-label">
+              DEVICE
+            </span>
 
             <strong>
               ${deviceName || "Invigilator Device"}
             </strong>
 
             <small>
-              ${registered ? "REGISTERED" : "NOT REGISTERED"}
+              ${
+                registered
+                  ? "REGISTERED"
+                  : "NOT REGISTERED"
+              }
             </small>
 
             <code>${deviceKey}</code>
+
           </div>
 
           <div class="dbc-brand">
@@ -119,7 +115,10 @@ export function renderShell({
         </div>
 
         <footer class="app-footer">
-          <span>EBMAS — Examination Booklet Management & Accountability System</span>
+          <span>
+            EBMAS — Examination Booklet Management & Accountability System
+          </span>
+
           <strong>DBC.tech</strong>
         </footer>
 
@@ -131,16 +130,22 @@ export function renderShell({
 
 export function bindShellEvents(
   onNavigate: (page: string) => void
-) {
+): void {
   document
     .querySelectorAll<HTMLButtonElement>("[data-nav]")
     .forEach((button) => {
-      button.addEventListener("click", () => {
-        const page = button.dataset.nav;
 
-        if (page) {
-          onNavigate(page);
+      button.addEventListener("click", () => {
+
+        const page =
+          button.dataset.nav;
+
+        if (!page) {
+          return;
         }
+
+        onNavigate(page);
       });
+
     });
 }
